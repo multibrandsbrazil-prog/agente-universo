@@ -360,11 +360,12 @@ Antes de planejar as fases, mapeamos **toda a estrutura do Hermes Agent** (19 pa
 | **🎯 Core** | `deepseek-ai/deepseek-harness` | `git clone` + `pnpm install` + `pnpm dsh web` | ✅ Confirmado |
 | **🧠 Multi-LLM** | DSH providers nativos | config em `~/.config.yaml` | ✅ Built-in |
 | **💾 Memory** | `volcengine/OpenViking` + `@openviking/openclaw-plugin` | `pip install openviking` + `openclaw plugins install @openviking/openclaw-plugin` | ✅ 34k⭐, AGPL-3.0, dsh-plugin oficial |
-| **�️ Sandbox (Linux)** | DSH `native/landlock-run` | já vem no DSH | ✅ Built-in (Fase 1 já ativa) |
+| **🛡️ Sandbox (Linux)** | DSH `native/landlock-run` | já vem no DSH | ✅ Built-in (Fase 1 já ativa) |
 | **🛡️ Sandbox (cross-OS opcional)** | `BitMiracle-AI/Dormice` | `curl install.sh \| bash` (NÃO Docker) | ⚠️ Opcional — só se precisar macOS/Windows |
 | **🛡️ Prompt defense** | Construir in-house | — | Ruflo aidefence como ref |
 | **📊 Observability** | `Yuntwo/dsh-langfuse-plugin` | `git clone` em `plugins/` | ⚠️ Auditar |
-| **🧬 Self-evolution** | DSPy + GEPA | Otimiza **prompts**, não markdown | 🔧 Caso de uso corrigido |
+| **🧬 Self-evolution (prompts)** | DSPy + GEPA | Otimiza **prompts**, não markdown | 🔧 Caso de uso corrigido |
+| **🧬🧬 Auto-evolução (código)** | Self-knowledge + self-modify tools | Opt-in por tool, aprovação humana obrigatória | 🆕 **NOVO** — ver Doc 12D |
 | **📚 Skills** | 3 fontes | Mix: paste-link (OpenClaw) + cp (Hermes) + plugin add (DSH) | 🔧 Formatos corrigidos |
 
 ---
@@ -845,7 +846,16 @@ echo "Qual meu nome?" | pnpm dsh chat   # Deve lembrar via OpenViking assemble()
 
 ---
 
-### 🟢 FASE 6 — Self-evolution (DSPy + GEPA) (2-3 dias) **REESCRITA**
+### 🟢 FASE 6 — Self-evolution + Auto-evolução (3-5 dias) **REESCRITA**
+
+**🆕 2026-08-31:** Esta fase agora entrega **duas camadas** que coexistem:
+
+- **Tradicional:** DSPy + GEPA otimizam **system prompts** (já planejado)
+- **🆕 Auto-evolução:** Tools opt-in que permitem o agente **ler, escrever e commitar código nele mesmo** (com aprovação humana)
+
+**Princípio:** modo default é tradicional; auto-evolução só ativa via `agent.self_modify.enabled: true` no config + aprovação por tool.
+
+#### Parte A — Self-evolution de prompts (DSPy+GEPA) — tradicional
 
 **⚠️ MUDANÇA CRÍTICA:** DSPy/GEPA otimiza **DSPy modules** (Python code), não markdown arbitrário.
 
@@ -926,23 +936,159 @@ optimized.save("$HOME/agente-universo/dspy-output.json")
 print(f"✅ Module otimizado. Salvo em dspy-output.json")
 print(f"Inspecionar:")
 print(f"  - Prompt otimizado: dspy-output.json")
-print(f"  - Aplicar no DSH: ver Fase 6.2")
+print(f"  - Aplicar no DSH: ver Fase 6A.2")
 ```
 
 **Aplicar no DSH:**
 ```bash
-# 6.1 — Rodar otimizador (background)
+# 6A.1 — Rodar otimizador (background)
 python3 $HOME/agente-universo/dsh-optimizer.py
 
-# 6.2 — Diff de antes/depois
+# 6A.2 — Diff de antes/depois
 diff <(cat skills/custom/pesquisa-internet/SKILL.md) \
      <(jq -r '.system_prompt' dspy-output.json) | head -40
 
-# 6.3 — Aplicar (manual, com aprovação)
+# 6A.3 — Aplicar (manual, com aprovação)
 # Copiar o prompt otimizado de dspy-output.json
 # Colar em ~/.config/dsh/system-prompt.yaml
 # (path real: ver docs DSH)
 ```
+
+#### Parte B — Self-knowledge tool (sempre ativo, sem aprovação) — �
+
+**Conceito:** tool que dá ao agent visibilidade do próprio código, sem permitir escrita.
+
+```python
+# packages/agent-universo/src/tools/codebase_map.py
+"""Tool: agent lê próprio código para se auto-entender."""
+
+class CodebaseMapTool:
+    requires_approval = False  # só lê, sempre seguro
+
+    def execute(self, query: str) -> dict:
+        """
+        query: "que tools tenho?", "onde plugar X?", "lista packages ativos"
+        """
+        if query.startswith("list_packages"):
+            return {"packages": list_active_packages()}
+        if query.startswith("find_extension_point"):
+            return find_extension_point(query)
+        if query.startswith("dependency_graph"):
+            return build_dep_graph()
+```
+
+#### Parte C — Self-modify tools (opt-in, COM aprovação) — 🆕
+
+**Conceito:** 4 tools que permitem o agent se modificar. Cada uma exige aprovação humana.
+
+```python
+# packages/agent-universo/src/tools/write_plugin.py
+"""Tool: agent cria novo plugin. EXIGE aprovação."""
+
+class WritePluginTool:
+    requires_approval = True
+    approval_prompt = "Agente vai criar plugin '{plugin_name}' em {path}. Aprovar?"
+
+    def execute(self, plugin_name: str, spec: dict, code: str) -> dict:
+        # 1. Validar spec
+        validate_plugin_spec(spec)
+        # 2. Escrever em sandbox primeiro
+        sandbox_path = f"$HOME/agente-universo/sandbox/{plugin_name}/"
+        write_to_sandbox(sandbox_path, code)
+        # 3. Rodar testes
+        test_result = run_tests(sandbox_path)
+        # 4. Se passou, propor promoção (outra aprovação)
+        return {"status": "sandbox_ok", "tests": test_result}
+
+
+class CommitChangesTool:
+    requires_approval = True
+    approval_prompt = "Agente vai commitar {n} arquivos em {path}. Aprovar?"
+
+    def execute(self, path: str, message: str) -> dict:
+        # git add + commit (nunca push sem segunda aprovação)
+        ...
+
+
+class PromotePluginTool:
+    requires_approval = True
+    approval_prompt = "Promover plugin de sandbox → produção? Não dá rollback fácil."
+
+    def execute(self, plugin_name: str) -> dict:
+        # mv sandbox → plugins/, hot-reload via Cordis
+        ...
+
+
+class GenerateSkillTool:
+    requires_approval = True
+    approval_prompt = "Agente vai criar SKILL.md '{skill_name}'. Aprovar?"
+
+    def execute(self, skill_name: str, body: str) -> dict:
+        # escreve em ~/.hermes/skills/<cat>/<name>/SKILL.md
+        ...
+```
+
+#### Parte D — Sandbox triplo (específico pra auto-evolução)
+
+```bash
+# Modo 1: Read-only (sempre, sem aprovação)
+landlock-run --ro "$HOME/agente-universo" --network none
+
+# Modo 2: Trusted write (auto-modify aprovado, paths whitelisted)
+landlock-run --rw "$HOME/agente-universo/plugins/" --network limited
+
+# Modo 3: Untrusted quarantine (código novo, ephemeral)
+Dormice sandbox --ephemeral --network none --auto-cleanup
+```
+
+#### Config exemplo
+
+```yaml
+# ~/.config.yaml
+agent:
+  # Tradicional (default)
+  mode: hybrid
+  self_modify:
+    enabled: true
+    approval_required: true     # humano aprova CADA modificação
+    sandbox: trusted            # landlock trusted mode
+
+    capabilities:
+      self_knowledge: true      # sempre pode ler próprio código
+      write_plugins: true       # pode criar plugins (com aprovação)
+      write_skills: true        # pode criar SKILL.md (com aprovação)
+      commit_changes: true      # pode commitar (com aprovação)
+      propose_prs: false        # virar true só se der write token no upstream
+
+    rollback:
+      auto_revert_on_test_fail: true
+      keep_last_n_commits: 5
+
+    audit:
+      log_path: ~/.agente-universo/audit/self_modify.log
+      notify_on_modify: telegram
+```
+
+#### Garantias de segurança
+
+| Garantia | Como |
+|---|---|
+| Não modifica sem aprovação | `requires_approval=True` em TODAS tools de write |
+| Não quebra o sistema | Sandbox triplo + teste automático + git rollback |
+| Não vira malware | Audit log + paths whitelisted + aprovação humana |
+| Não estoura budget | Credits tracker (já existe no DSH) |
+| Não modifica upstream sem permissão | `propose_prs: false` por default |
+
+#### Entregáveis da Fase 6
+
+| Item | Tipo |
+|---|---|
+| `dsh-optimizer.py` rodando | tradicional (Parte A) |
+| `codebase_map` tool ativo | auto-evolução (Parte B) |
+| 4 self-modify tools opt-in | auto-evolução (Parte C) |
+| Sandbox triplo configurado | auto-evolução (Parte D) |
+| Audit log funcional | segurança |
+| Demo: usuário pede "adicione suporte a X" → agente lê código → escreve plugin → testa → propõe commit | E2E prova |
 
 **Mitigações aplicadas:**
 - **L-I2:** DSPy otimiza **DSPy module**, não markdown. Trainset rotulado (não vazio)
@@ -4523,3 +4669,190 @@ OpenViking é **só a camada 6 (Context & Memory)** do nosso agente. O DSH conti
 ❌ **4 camadas em GAP** — todas fora do escopo por decisão (single-user CLI/Web é o suficiente pro agregador de skills)
 
 **Plano v2 não precisa de revisão** — todas as 15 camadas críticas estão cobertas via DSH (core) + OpenViking (memory) + Fase 2/3/4 (skills + MCPs).
+
+---
+
+## 📌 Documento 12D (anexo, 2026-08-31): Arquitetura Híbrida — Tradicional + Auto-evolução
+
+> **Origem:** decisão do Renan em 2026-08-31 — agente deve ser tradicional (prompts/tools/skills) **E** auto-evoluir (modificar próprio código).
+> **Princípio:** duas camadas coexistem, com auto-evolução opt-in por tool + aprovação humana obrigatória.
+
+### Arquitetura (visual)
+
+```
+┌─────────────────────────────────────────────────�
+│  CAMADA 1 — TRADICIONAL (sempre presente)       │
+│  • Prompts fixos por surface                    │
+│  • Tools registry estático                      │
+│  • Skills procedurais (SKILL.md)                │
+│  • MCPs declarados                              │
+│  • Slash commands                               │
+├─────────────────────────────────────────────────┤
+│  CAMADA 2 — AUTO-EVOLUÇÃO (opt-in por tool)     │
+│  • Self-knowledge (lê próprio código)           │
+│  • Self-modification (escreve plugins)          │
+│  • Meta-skills (cria SKILL.md novos)            │
+│  • Architectural evolution (propõe PRs)         │
+│  • Memory de decisões (OpenViking)              │
+└─────────────────────────────────────────────────┘
+```
+
+### Config exemplo
+
+```yaml
+# ~/.config.yaml — agente-universo
+agent:
+  name: "Meu Agente"
+  model: deepseek-chat
+  fallback_model: claude-sonnet
+
+  # Tradicional (sempre ativo)
+  tools:
+    - terminal
+    - file
+    - web
+    - memory
+    - skills
+    - mcp
+
+  skills:
+    sources:
+      - hermes:42
+      - openclaw:5300
+      - dsh:300
+
+  # Auto-evolução (opt-in)
+  self_modify:
+    enabled: true
+    approval_required: true     # humano aprova CADA modificação
+    sandbox: trusted            # landlock trusted mode
+
+    capabilities:
+      self_knowledge: true      # sempre pode ler próprio código
+      write_plugins: true       # pode criar plugins (com aprovação)
+      write_skills: true        # pode criar SKILL.md (com aprovação)
+      commit_changes: true      # pode commitar (com aprovação)
+      propose_prs: false        # virar true só se der write token no upstream
+
+    rollback:
+      auto_revert_on_test_fail: true
+      keep_last_n_commits: 5
+
+    audit:
+      log_path: ~/.agente-universo/audit/self_modify.log
+      notify_on_modify: telegram
+```
+
+### Tools novos (Fase 6B e 6C)
+
+| Tool | Approval? | Função |
+|---|---|---|
+| `codebase_map` | ❌ não | Lista packages, encontra extension points, dependency graph |
+| `write_plugin` | ✅ sim | Cria plugin novo em sandbox → testa → propõe promoção |
+| `commit_changes` | ✅ sim | git add + commit local (nunca push sem segunda aprovação) |
+| `promote_plugin` | ✅ sim | Move de sandbox → production + hot-reload Cordis |
+| `generate_skill` | ✅ sim | Escreve SKILL.md novo em `~/.hermes/skills/` |
+
+### Sandbox triplo (Fase 6D)
+
+| Modo | Quando | Comando |
+|---|---|---|
+| **Read-only** | Self-knowledge (sempre) | `landlock-run --ro $HOME/agente-universo --network none` |
+| **Trusted write** | Auto-modify aprovado | `landlock-run --rw $HOME/agente-universo/plugins/ --network limited` |
+| **Untrusted quarantine** | Código novo a testar | `Dormice sandbox --ephemeral --network none --auto-cleanup` |
+
+### Exemplo end-to-end
+
+```
+Usuário: "Adicione suporte a Google Sheets no agente"
+
+[Modo tradicional]
+Agente: "Não tenho essa skill. Posso tentar instalar via clawhub?"
+        (usuário: "sim")
+Agente: clawhub install google-sheets → ok, funciona
+
+OU
+
+[Modo auto-evolução]
+Agente: 
+  1. codebase_map("find_extension_point for sheets integration")
+     → retorna: "plugin slot em packages/skill/"
+  2. write_plugin("google-sheets", spec, code)
+     → escreve em sandbox, roda testes, propõe promoção
+     → APROVAÇÃO HUMANA: "Plugin criado e testado. Promover?"
+  3. promote_plugin("google-sheets")
+     → mv sandbox → plugins/, hot-reload Cordis
+     → APROVAÇÃO HUMANA: "Promover pra produção?"
+  4. commit_changes("Add google-sheets plugin", auto-generated message)
+     → git add + commit local
+     → APROVAÇÃO HUMANA: "Commitar? (push separado)"
+  5. OpenViking: memory.commit("Adicionado google-sheets plugin em <data>")
+```
+
+### Roadmap reescrito
+
+| Fase | Tradicional | Auto-evolução |
+|---|---|---|
+| **0** | Verificações | — |
+| **1** | DSH core + UI | — |
+| **2** | Skills bridge Hermes42 | — |
+| **3** | OpenClaw 5.300+ | — |
+| **4** | MCPs BR + Langfuse | — |
+| **5** | OpenViking memory | — |
+| **6** | Self-evolution DSPy+GEPA (prompts) | **+ CodebaseMap tool + 4 self-modify tools opt-in** |
+| **7** | Benchmark vs Hermes | **+ Demo E2E auto-modificação** |
+| **8** | Fechar gaps (gateway/voice) | **+ Architectural evolution (PRs upstream)** |
+| **9** | Polish + publicar | **+ Meta-skills generator completo** |
+
+### Trade-offs aceitos
+
+| Risco | Mitigação |
+|---|---|
+| Infinite loop (modifica sem parar) | Budget de iterações + watchdog de 3min (já tem no Hermes cron) |
+| Modificação quebra o sistema | Sandbox triplo + git rollback automático se teste falha |
+| Modificação vira malware | Approval flow humano + audit log + paths whitelisted |
+| API costs explodem | Credits tracker (já existe no DSH) |
+| Perde controle do que o agente faz | Whitelist de paths modificáveis + audit log |
+
+### Por que nenhum projeto open-source faz isso hoje
+
+| Quem faz | Como | Limite |
+|---|---|---|
+| AutoGPT (2023) | loop autônomo de tarefas | não modifica código |
+| Devin (Cognition) | escreve código pra tasks externas | não se modifica |
+| Hermes Curator | sugere archive/pin de skills | não escreve código |
+| OpenHands | fullstack dev agent | não se modifica |
+| DSPy+GEPA | otimiza módulos Python | otimiza, não modifica arquitetura |
+| **agente-universo (proposto)** | **lê + escreve + commita próprio código** | **com aprovação humana** |
+
+### Garantias de segurança
+
+| Garantia | Como |
+|---|---|
+| Não modifica sem aprovação | `requires_approval=True` em TODAS tools de write |
+| Não quebra o sistema | Sandbox triplo + teste automático + git rollback |
+| Não vira malware | Audit log + paths whitelisted + aprovação humana |
+| Não estoura budget | Credits tracker (já existe no DSH) |
+| Não modifica upstream sem permissão | `propose_prs: false` por default |
+
+### Tempo estimado
+
+| Bloco | Dias |
+|---|---|
+| MVP (Fase 1-5) | 7-10 |
+| Fase 6A (DSPy/GEPA) | 2-3 |
+| Fase 6B (CodebaseMap) | 1 |
+| Fase 6C (4 self-modify tools) | 2-3 |
+| Fase 6D (Sandbox triplo) | 1 |
+| **Total até "agente auto-evolui"** | **13-18 dias úteis** |
+
+### Conclusão
+
+Esse desenho entrega o melhor dos dois mundos:
+
+- **Default tradicional:** usuário que não quer auto-evolução tem agente sólido como qualquer outro
+- **Opt-in auto-evolução:** usuário avançado habilita e ganha capacidade única no mercado open-source
+- **Aprovação humana sempre:** nenhuma modificação acontece sem confirmação explícita
+- **Audit + rollback:** toda mudança é registrada e reversível
+
+Nenhum projeto open-source hoje entrega essa combinação. É o diferencial competitivo real do agente-universo vs Hermes (e vs qualquer outro).
