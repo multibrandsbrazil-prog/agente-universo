@@ -33,6 +33,8 @@ agente-universo/
 
 **Arquitetura de referência (Hermes, 19 partes):** [`docs/ARQUITETURA-HERMES.md`](docs/ARQUITETURA-HERMES.md) — inventário exaustivo da arquitetura real do Hermes Agent (não README de marketing — código real), pra usar como base de comparação durante a implementação.
 
+**🗂️ Documento único consolidado:** [`docs/DOCUMENTO-CONSOLIDADO.md`](docs/DOCUMENTO-CONSOLIDADO.md) — todos os 11 documentos do projeto concatenados em ordem lógica (196KB, ~4.300 linhas). Pra quem quer ler tudo num arquivo só.
+
 ---
 
 ## 🎯 Stack final (validado empiricamente)
