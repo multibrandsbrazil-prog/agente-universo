@@ -4414,3 +4414,112 @@ Responde em texto normal. **Não instalo nada** até você dar OK explícito na 
 5. **Fase 5 (Dormice sandbox)** do plano v2 pode ser **opcional** — `landlock-run` já dá sandbox Linux. Dormice só vale pra cross-OS (macOS/Windows) ou pra requisitos avançados.
 
 **Recomendação:** revisar Fase 5 do plano v2 pra considerar `landlock-run` como padrão Linux + Dormice como opcional cross-OS.
+
+---
+
+## 📌 Documento 12B (anexo, 2026-08-31): OpenViking — o que ele cobre (mapa 19 camadas)
+
+> **Origem:** checagem empírica via `gh api repos/volcengine/OpenViking/*` (metadata + contents + releases + README).
+> **Repo validado:** `volcengine/OpenViking` — 34.698⭐, AGPL-3.0, Python, último release `v0.4.17.1` (2026-08-31, hoje), 21 dirs top-level (`openviking/`, `agent-plugins/`, `bot/`, `web-studio/`, `openviking_cli/`, `sdk/`, `integrations/`, `crates/`, etc).
+> **Tagline oficial:** *"Self-evolving Context Database for AI Agents. Unify Agent Memory, Knowledge RAG and Skills."*
+> **Conceito central:** filesystem virtual `viking://` com **tiered loading L0/L1/L2** e **directory recursive retrieval** (vetor → diretório → drill-down).
+
+### Cobertura por camada (Hermes 19)
+
+| # | Camada Hermes | OpenViking cobre? | Como |
+|---|---|---|---|
+| 5 | Context Lifecycle | � parcial | **Tiered loading L0/L1/L2** = versão do context_breakdown + compressor |
+| 6 | Context & Memory | ✅ **100%** | **Substitui SessionDB + memory providers** (Mem0/Honcho/Supermemory). `viking://user/{id}/memories/` |
+| 4 | Capabilities (Skills) | � parcial | `viking://user/{id}/skills/` carrega skills como contexto (não é SKILL.md procedimental) |
+| 10 | Extensibility | 🟡 parcial | `agent-plugins/` (DSH plugin oficial mantido pelo próprio time) + MCP-like via `viking://` |
+| 12 | Observability | 🟡 parcial | **Observable retrieval** — cada query preserva trajectory (path → resultado). Não substitui OTLP/Langfuse |
+| 1, 2, 3, 7, 8, 9, 11, 13, 14, 15, 16, 17, 18, 19 | — | ❌ zero | OpenViking **NÃO é core de agente** — é plugin/serviço |
+
+### Resumo OpenViking
+
+| Faixa | Camadas | Lista |
+|---|---|---|
+| ✅ 100% | **1** (6) | Context & Memory |
+| 🟡 parcial | **4** (4, 5, 10, 12) | Skills, Context Lifecycle, Extensibility, Observability |
+| ❌ zero | **14** | tudo o resto (incluindo Agent Loop, Inference, Gateway) |
+
+### 5 superpoderes do OpenViking (substituem 3 camadas do Hermes)
+
+| Camada Hermes | Substituição OpenViking |
+|---|---|
+| **SessionDB** (memória transacional) | `viking://user/{id}/memories/` com persistência assíncrona |
+| **Memory providers** (Mem0/Honcho/Supermemory/Byterover/Hindsight) | Memories + Resources + Skills num único filesystem virtual |
+| **RAG** (vector store separado tipo LangChain/Pinecone) | **Directory recursive retrieval** — vetor localiza diretório, drill-down camada por camada |
+| **Skills procedurais** (parcial) | `viking://user/{id}/skills/` carrega skills como contexto |
+| **Context breakdown** (UI live de tokens) | **Tiered loading L0/L1/L2** — L0 = 1 frase, L1 = overview, L2 = full |
+
+### Trade-offs aceitos
+
+| Item | Valor |
+|---|---|
+| License | **AGPL-3.0** (copyleft) — OK self-hosted sem distribuição, problema se for SaaS |
+| É core de agente? | ❌ NÃO — é **plugin/serviço** que o agente usa |
+| Stack | Python server (porta 1933) + agent-plugins/ DSH + opcional `web-studio/` |
+| Embedding default | Doubao (ByteDance) — trocável pra local |
+| Última release | `v0.4.17.1` (2026-08-31, hoje) — push diário |
+
+### Conclusão pro plano v2
+
+OpenViking é **só a camada 6 (Context & Memory)** do nosso agente. O DSH continua sendo o core (camada 3). OpenViking entra como **plugin/serviço na Fase 5** (já planejado).
+
+---
+
+## 📌 Documento 12C (anexo, 2026-08-31): CHECKLIST CONSOLIDADO — quem cobre o quê (19 camadas × 3 fontes)
+
+> **Pergunta respondida:** "Todos os 19 tópicos do Hermes foram cobertos pelo quê? Pelo DSH? Pelo OpenViking? Pelo plano v2? Ficou gap?"
+> **Resposta:** tabela 1-para-1 + status de cobertura + quem preenche o gap.
+
+### Tabela mestra
+
+| # | Camada Hermes | DSH | OpenViking | Plano v2 (gap filler) | Status final |
+|---|---|---|---|---|---|
+| 1 | Entry Points | ✅ 100% (apps/cli + apps/web + acp) | ❌ | ❌ fora do MVP | ✅ **OK via DSH** |
+| 2 | Distribution | 🟡 parcial (CLI subcommands + webhook) | ❌ | ❌ fora do MVP | � **aceitável** |
+| 3 | **Agent Loop (CORE)** | ✅ 100% (core+llm+goal+plan) | ❌ | ✅ DSH é o core | ✅ **OK via DSH** |
+| 4 | Capabilities | ✅ 100% (skill+subagent+extensions) | 🟡 parcial (viking:// skills) | ✅ **Fase 2+3** (adaptador Hermes42+OpenClaw5.300+DSH~300) | ✅ **OK via DSH+Fase2/3** |
+| 5 | Context Lifecycle | ✅ 100% (context+compaction+code-runtime) | � parcial (tiered L0/L1/L2) | ✅ Fase 1 já ativa | ✅ **OK via DSH** |
+| 6 | **Context & Memory** | ✅ 100% (SessionDB SQLite FTS) | ✅ 100% (viking://) | ✅ **Fase 5** OpenViking plugin | ✅ **OK via DSH+OV** |
+| 7 | Inference | ✅ 100% (llm+credentials) | ❌ | ✅ built-in | ✅ **OK via DSH** |
+| 8 | Voice & Desktop | ❌ zero | ❌ | ❌ fora do MVP | ❌ **GAP — não no escopo** |
+| 9 | Code & IDE | 🟡 parcial (lsp+acp+code-runtime) | ❌ | ✅ DSH built-in | ✅ **OK via DSH** |
+| 10 | Extensibility | ✅ 100% (Cordis+mcp) | 🟡 parcial (agent-plugins) | ✅ Fase 4 (MCPs BR via DSH) | ✅ **OK via DSH+OV** |
+| 11 | Secrets & Security | ✅ 100% (credentials+sandbox+landlock-run) | ❌ | ✅ Fase 1 já ativa | ✅ **OK via DSH** |
+| 12 | Observability | ✅ 100% (diagnostics+feedback) | 🟡 parcial (trajectory) | ⚠️ **Fase 4** (Langfuse plugin — auditar antes) | ✅ **OK via DSH** |
+| 13 | Background Work | 🟡 parcial (schedule+jobs+subagent) | ❌ | ✅ built-in básico | � **aceitável** |
+| 14 | Gateway Infra multi-plataforma | ❌ zero | ❌ | ❌ fora do MVP | ❌ **GAP — não no escopo** |
+| 15 | Relay & Connector | ❌ zero | ❌ | ❌ fora do MVP | � **GAP — não no escopo** |
+| 16 | Persistence & Isolation | ✅ 100% (storage+workspace+host) | 🟡 roda como server separado | ✅ DSH built-in | ✅ **OK via DSH** |
+| 17 | Distribution & Packaging | 🟡 parcial (pnpm + apps/web + python/sdk) | ❌ | ❌ Docker/Nix fora do MVP | 🟡 **aceitável** |
+| 18 | Meta (Curator/Skin/Pet) | ❌ zero | ❌ | ❌ fora do MVP | ❌ **GAP — não no escopo** |
+| 19 | Tests/Docs | � parcial (vitest + Docusaurus + AGENTS.md) | 🟡 parcial | ✅ DSH built-in | 🟡 **aceitável** |
+
+### Resumo por fonte
+
+| Quem cobre | Camadas | % |
+|---|---|---|
+| **DSH (core)** | 10 ✅ + 5 🟡 = **15** | **79%** |
+| **OpenViking** | 1 ✅ + 4 🟡 = **5** (mas só 1 é exclusiva) | **26%** |
+| **Plano v2 (Fases 2/3/4/5)** | preenche 4 camadas (4, 6, 10, 12) com plugins | **21%** |
+| **GAP fora do MVP** | 4 camadas (8, 14, 15, 18) | **21%** |
+
+### Camadas em GAP (não cobertas, fora do MVP por design)
+
+| # | Camada | Por que ficou de fora |
+|---|---|---|
+| 8 | Voice & Desktop (TTS, wake, computer use) | Não é objetivo do agente-universo — foco é agregador de skills |
+| 14 | Gateway Infra multi-plataforma (15+ plataformas mensageria) | DSH é single-user CLI/Web; não precisa multi-tenant como Hermes |
+| 15 | Relay & Connector (WebSocket relay experimental) | Até no Hermes é experimental; pode ser reavaliado em Fase 7+ |
+| 18 | Meta (Curator/Skin/Pet) | Curator do Hermes roda standalone; vira plugin opcional pós-MVP |
+
+### Conclusão executiva
+
+✅ **15 camadas OK** (10 DSH nativo + 5 com plugins OpenViking/Langfuse/OpenClaw)
+🟡 **0 camadas em risco pro MVP**
+❌ **4 camadas em GAP** — todas fora do escopo por decisão (single-user CLI/Web é o suficiente pro agregador de skills)
+
+**Plano v2 não precisa de revisão** — todas as 15 camadas críticas estão cobertas via DSH (core) + OpenViking (memory) + Fase 2/3/4 (skills + MCPs).
