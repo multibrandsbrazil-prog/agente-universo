@@ -39,7 +39,7 @@ agente-universo/
 |---|---|---|
 | 🎯 Core | DeepSeek Harness (`dsh` v0.1.2-alpha.3) | ✅ 206k⭐, MIT |
 | 🧠 Multi-LLM | DSH providers nativos | ✅ Built-in |
-| 💾 Memory | `runfali/dsh-mem0-plugins` | ⚠️ Auditar antes |
+| 💾 Memory | `volcengine/OpenViking` + plugin DSH oficial | ✅ 34.690⭐, AGPL-3.0, plugin DSH mantido pelo próprio time |
 | 🛡️ Sandbox | `BitMiracle-AI/Dormice` | ✅ Self-hosted |
 | 🛡️ Prompt defense | In-house (~200 linhas Python) | Ruflo aidefence como ref |
 | 📊 Observability | `Yuntwo/dsh-langfuse-plugin` | ⚠️ Auditar antes |
@@ -59,7 +59,7 @@ agente-universo/
 | 2 | 3-4h | ⏸️ | Skills Bridge + 42 skills Hermes |
 | 3 | 1-2 dias | ⏸️ | OpenClaw skills via clawhub |
 | 4 | 3-4h | ⏸️ | MCP BR + Langfuse observability |
-| 5 | 4-6h | ⏸️ | Sandbox Dormice + Memory mem0 |
+| 5 | 4-6h | ⏸️ | Sandbox Dormice + Memory OpenViking (server Python self-hosted porta 1933) |
 | 6 | 2-3 dias | ⏸️ | Self-evolution DSPy+GEPA |
 | 7 | 1 dia | ⏸️ | Benchmark vs Hermes + publicar |
 
@@ -83,7 +83,7 @@ agente-universo/
 2. **Validar empíricamente, não por stars** — 3 repos foram rejeitados (BridgeWard, e2b fragments, ink-ui stale) mesmo com stars razoáveis
 3. **Curar antes de agregar** — OpenClaw awesome-list filtrou 7.215 itens, usar SÓ a curada
 4. **Pinar versões** — DSH é alpha, pinar tag exata
-5. **Auditar plugins 3rd-party** — todo plugin DSH da comunidade tem ⭐0-25, ler código antes
+5. **Auditar plugins 3rd-party** — plugins DSH da comunidade têm ⭐0-25, ler código antes. Exceção: plugins oficiais mantidos pelo próprio time do projeto (ex: `@openviking/openclaw-plugin`) já passam por curadoria upstream.
 
 ---
 
