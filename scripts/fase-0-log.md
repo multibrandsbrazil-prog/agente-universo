@@ -40,7 +40,7 @@ lsb_release -ds
 | **Docker** | 29.4.1 | qualquer | ✅ Disponível |
 | **Ollama** | /usr/local/bin/ollama | instalado | ✅ |
 | **GPU NVIDIA** | não detectada | opcional | ⚠️ Sem GPU (vai precisar de API) |
-| **Home** | /home/openclaw | qualquer | ✅ |
+| **Home** | $HOME | qualquer | ✅ |
 | **Disco livre** | 65 GB | ~1 GB mínimo | ✅ 65x o necessário |
 | **Arquitetura** | x86_64 | qualquer | ✅ |
 | **OS** | Ubuntu 24.04.4 LTS | Linux/macOS/Win | ✅ Ubuntu |

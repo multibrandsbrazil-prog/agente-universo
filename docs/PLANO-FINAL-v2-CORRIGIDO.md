@@ -81,7 +81,7 @@ echo "✅ Diretório criado em $PWD"
 
 **Mitigações aplicadas:**
 - **L-C1:** instala pnpm se não tiver
-- Usa `$HOME` em vez de `/home/openclaw` hardcoded (L-M2)
+- Usa `$HOME` dinâmico em vez de username hardcoded (L-M2)
 - Não baixa nada — só verifica
 
 **Saída esperada:** node22+, pnpm11.7+, gh logado, ~1GB livre.
@@ -139,7 +139,7 @@ pnpm dsh web
 - **L-C1:** Fallback se tag não existir
 - **L-C2:** Usa `git fetch --tags` antes
 - **L-C6:** Comando `pnpm dsh web` confirmado
-- **L-M2:** Usa `$HOME`
+- **L-M2:** Usa `$HOME` dinâmico
 - Cleanup automático se `pnpm install` falhar
 - `--max-old-space-size` para build
 
@@ -492,7 +492,7 @@ echo "Qual meu nome?" | pnpm dsh chat   # Deve lembrar
 **⚠️ MUDANÇA CRÍTICA:** DSPy/GEPA otimiza **DSPy modules** (Python code), não markdown arbitrário.
 
 ```python
-# /home/openclaw/agente-universo/dsh-optimizer.py
+# $HOME/agente-universo/dsh-optimizer.py
 """
 DSH system prompt optimizer usando DSPy + GEPA.
 
@@ -542,9 +542,9 @@ class DSHAgentModule(Module):
 # Coletar manualmente 20-30 exemplos de boa resposta.
 trainset = [
     dspy.Example(
-        user_request="Liste os arquivos .py em /home/openclaw",
+        user_request="Liste os arquivos .py em $HOME",
         system_context="Você é um agente DSH. Use a tool terminal.",
-        agent_reply="Ran `find /home/openclaw -name '*.py' | head -10` — returned 10 files..."
+        agent_reply="Ran `find $HOME -name '*.py' | head -10` — returned 10 files..."
     ).with_inputs("user_request", "system_context"),
     # ... mais 19-29 exemplos rotulados
 ]
@@ -564,7 +564,7 @@ optimized = optimizer.compile(module, trainset=trainset)
 
 # === Salvar prompt otimizado ===
 
-optimized.save("/home/openclaw/agente-universo/dspy-output.json")
+optimized.save("$HOME/agente-universo/dspy-output.json")
 print(f"✅ Module otimizado. Salvo em dspy-output.json")
 print(f"Inspecionar:")
 print(f"  - Prompt otimizado: dspy-output.json")
@@ -574,7 +574,7 @@ print(f"  - Aplicar no DSH: ver Fase 6.2")
 **Aplicar no DSH:**
 ```bash
 # 6.1 — Rodar otimizador (background)
-python3 /home/openclaw/agente-universo/dsh-optimizer.py
+python3 $HOME/agente-universo/dsh-optimizer.py
 
 # 6.2 — Diff de antes/depois
 diff <(cat skills/custom/pesquisa-internet/SKILL.md) \
@@ -606,7 +606,7 @@ cd "$HOME/agente-universo/deepseek-harness"
 
 # 1. 10 tarefas idênticas em AMBOS agentes
 TASKS=(
-    "Liste os 5 maiores arquivos em /home/openclaw"
+    "Liste os 5 maiores arquivos em $HOME"
     "Pesquise o preço do dólar hoje via web"
     "Crie um CSV 'test.csv' com header e 3 linhas"
     "Mostre as últimas 5 linhas de ~/.bashrc"
@@ -694,7 +694,7 @@ fi
 | Tag DSH | `v0.1.2-alpha.3` (não validada) | `dsh-v0.1.2-alpha.3` (validada) |
 | Comando DSH | "pnpm dsh web" (chute) | Confirmado no README |
 | pnpm setup | Assumido instalado | Auto-instala se faltar |
-| Path home | `/home/openclaw` hardcoded | `$HOME` dinâmico |
+| Path home | `$HOME` hardcoded | `$HOME` dinâmico |
 | `_archived_*` | Não filtrado | Filtro com `case` |
 | Body normalization | Só frontmatter | Frontmatter + body (paths + comandos) |
 | MCP server | `hermes mcp run` (inventado) | Profile DSH (real) |

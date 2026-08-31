@@ -152,7 +152,7 @@ nvidia-smi 2>/dev/null || echo "Sem GPU NVIDIA (rodar via API)"
 
 ```bash
 # Instalar DSH via git (NÃO npm — versões divergem)
-cd /home/openclaw
+cd $HOME
 git clone https://github.com/deepseek-ai/deepseek-harness.git
 cd deepseek-harness
 git checkout v0.1.2-alpha.3    # PINAR VERSÃO
@@ -178,13 +178,13 @@ pnpm dsh web
 
 ```bash
 # 2.1 — Criar diretório de skills customizadas
-mkdir -p /home/openclaw/deepseek-harness/skills/custom
+mkdir -p $HOME/deepseek-harness/skills/custom
 
 # 2.2 — Copiar suas 42 skills Hermes locais
-cp -r ~/.hermes/skills/* /home/openclaw/deepseek-harness/skills/custom/
+cp -r ~/.hermes/skills/* $HOME/deepseek-harness/skills/custom/
 
 # 2.3 — Criar adaptador SKILL.md normalizer (~100 linhas Python)
-cat > /home/openclaw/deepseek-harness/skills/adapter.py << 'EOF'
+cat > $HOME/deepseek-harness/skills/adapter.py << 'EOF'
 """SKILL.md normalizer: Hermes → DSH"""
 import re, yaml
 from pathlib import Path
@@ -244,7 +244,7 @@ while read repo; do
   name=$(basename "$repo")
   git clone --depth 1 "$repo" "/tmp/openclaw-skills/$name" 2>/dev/null
   if [ -d "/tmp/openclaw-skills/$name/skills" ]; then
-    cp -r "/tmp/openclaw-skills/$name/skills/"* /home/openclaw/deepseek-harness/skills/custom/ 2>/dev/null
+    cp -r "/tmp/openclaw-skills/$name/skills/"* $HOME/deepseek-harness/skills/custom/ 2>/dev/null
   fi
 done < /tmp/openclaw-top50.txt
 ```
@@ -261,7 +261,7 @@ done < /tmp/openclaw-top50.txt
 
 ```bash
 # 4.1 — Configurar MCP bridge no DSH
-cat >> /home/openclaw/deepseek-harness/config/mcp.yaml << 'EOF'
+cat >> $HOME/deepseek-harness/config/mcp.yaml << 'EOF'
 mcp_servers:
   - name: mercado_livre
     command: hermes mcp run mercado_livre
@@ -273,7 +273,7 @@ mcp_servers:
 EOF
 
 # 4.2 — Instalar Langfuse plugin DSH
-cd /home/openclaw/deepseek-harness
+cd $HOME/deepseek-harness
 git clone https://github.com/Yuntwo/dsh-langfuse-plugin.git plugins/dsh-langfuse-plugin
 pnpm install
 pnpm run build
@@ -308,7 +308,7 @@ EOF
 docker run -d -p 8080:8080 bitmiracle/dormice:latest
 
 # 5.2 — Mem0: instalar plugin DSH (auditar código antes!)
-cd /home/openclaw/deepseek-harness
+cd $HOME/deepseek-harness
 git clone https://github.com/runfali/dsh-mem0-plugins.git plugins/dsh-mem0
 # IMPORTANTE: ler TODO o código antes de ativar
 cat plugins/dsh-mem0/README.md
@@ -342,7 +342,7 @@ pip install dspy-ai
 pip install gepa-ai
 
 # 6.3 — Criar script de otimização
-cat > /home/openclaw/dsh-optimizer.py << 'EOF'
+cat > $HOME/dsh-optimizer.py << 'EOF'
 """DSH skill optimizer usando DSPy + GEPA."""
 import dspy
 from dspy import GEPA
@@ -362,7 +362,7 @@ print(f"Skill otimizada: {optimized}")
 EOF
 
 # 6.4 — Rodar (background, sem agente LLM)
-python3 /home/openclaw/dsh-optimizer.py
+python3 $HOME/dsh-optimizer.py
 ```
 
 **Teste:** Comparar resposta de uma skill antes vs depois da otimização.
@@ -378,7 +378,7 @@ python3 /home/openclaw/dsh-optimizer.py
 ```bash
 # 7.1 — 10 tarefas idênticas em Hermes e no nosso agente
 TASKS=(
-  "Liste os arquivos .py em /home/openclaw"
+  "Liste os arquivos .py em $HOME"
   "Pesquise o preço do dólar hoje"
   "Crie uma planilha CSV com 5 linhas"
   "Mande um email de teste"
@@ -396,7 +396,7 @@ done
 echo "Custo API último mês: $(cat ~/.hermes/.costs)"
 
 # 7.3 — Publicar no GitHub
-cd /home/openclaw
+cd $HOME
 gh repo create universal-agent-dsh --public --source=. --description="Agente universal self-hosted inspirado no Hermes. 5.700+ skills agregadas. MIT."
 git push -u origin main
 ```
@@ -450,7 +450,7 @@ git push -u origin main
 | 5 | `LACUNAS-FECHADAS.md` | 3 lacunas críticas (Ruflo + SKILL.md + integrações) | ✅ Salvo |
 | 6 | `PLANO-FINAL-CONSOLIDADO.md` | **Esse arquivo** — plano integrado final | ✅ Salvo |
 
-**Localização:** `/home/openclaw/importaai/`
+**Localização:** `$HOME/importaai/`
 
 ---
 
