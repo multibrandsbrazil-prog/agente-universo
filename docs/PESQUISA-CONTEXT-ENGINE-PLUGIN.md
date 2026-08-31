@@ -1,7 +1,9 @@
 # Pesquisa: Plugin de Context Engine pro agente-universo
 
 **Data:** 31/08/2026
-**Objetivo:** Achar plugin de `contextEngine` (slot do OpenClaw) compatível com o nosso core, que faça **busca semântica/relevância no histórico de conversa** antes de montar o request pro LLM.
+**Objetivo:** Achar plugin de `contextEngine` (slot do OpenClaw) compatível com o nosso core DSH, que faça **busca semântica/relevância no histórico de conversa** antes de montar o request pro LLM.
+
+**Decisão final:** **OpenViking** (`volcengine/OpenViking` + `@openviking/openclaw-plugin` oficial) — ver tabela comparativa no final.
 
 ---
 
@@ -16,84 +18,68 @@
 
 ---
 
-## ✅ Plugin escolhido: LUCID Context Engine
+## ✅ Plugin escolhido: OpenViking
 
-**Repo:** https://github.com/Spaztazim/lucid-context-engine
-**npm:** `git clone https://github.com/Spaztazim/lucid-context-engine.git ~/.openclaw/extensions/lucid-context-engine`
-**Licença:** MIT
-**Compatibilidade:** OpenClaw v3.7+ (usa slot `contextEngine` nativo)
+**Repo:** https://github.com/volcengine/OpenViking
+**Plugin DSH:** https://github.com/volcengine/OpenViking/tree/main/examples/dsh-memory-plugin
+**npm plugin:** `@openviking/openclaw-plugin@2026.8.31` (publicado HOJE)
+**License:** AGPL-3.0
+**Stars:** 34.688 (vs LUCID: 5, Mem0 plugin: ~100)
+**Commits últimos 90d:** push diário (vs LUCID: 5 total)
+**Autores:** 30 contributors (vs LUCID: 1)
+**CI workflows:** 26 (vs LUCID: 0)
 
 ### Como funciona (do README oficial)
 
 A cada turno:
 
-1. **Filtra trivial** — pula "ok", "obrigado", heartbeats
-2. **Busca híbrida** — BM25 + semântica via QMD
-3. **Score por saliência** — `salience = qmd_score × recency × type × collection`
-4. **Respeita budget** — só injeta o que cabe no context window restante
-5. **Injeta no system prompt** — LLM vê o contexto recalled automaticamente
+1. **`afterTurn`** — mensagens novas vão pra sessão OpenViking
+2. **`memory_store`** — fatos importantes persistidos imediatamente
+3. **`/compact`** — mensagens viram memória de longo prazo
+4. **`assemble`** — **antes de cada resposta**: memórias relevantes auto-injetadas no context
 
-### Pesos de saliência
+### Tools que o agente ganha
 
-| Fator | Peso |
-|---|---|
-| Recency ≤7d | 1.5× |
-| Recency ≤30d | 1.2× |
-| Recency ≤90d | 1.0× |
-| Recency >90d | 0.8× |
-| Type LESSONS.md | 2.0× |
-| Type decision | 1.5× |
-| Type memory/* | 1.0× |
-| Type log | 0.7× |
-| Collection memory | 1.5× |
-| Collection codex | 1.2× |
-| Default | 1.0× |
-
-### Configuração
-
-```json
-{
-  "plugins": {
-    "slots": {
-      "contextEngine": "lucid"
-    },
-    "entries": {
-      "lucid-context-engine": {
-        "enabled": true,
-        "topK": 5,
-        "threshold": 0.0
-      }
-    }
-  }
-}
-```
+`memory_recall` · `memory_store` · `memory_forget` · `ov_search` · `ov_read` · `ov_recall_trace` (debug!) + 10 outros.
 
 ---
 
-## ❌ Alternativa descartada: lossless-claw
+## ❌ Alternativas descartadas
 
-**Repo:** https://github.com/Martian-Engineering/lossless-claw
-**Por que não:** Usa DAG de resumos (Lossless Context Management). Preserva TUDO mas resumiu. Não é busca semântica — é compaction inteligente. Mais complexo, mais storage, overkill pro nosso caso.
+### LUCID Context Engine (Spaztazim/lucid-context-engine)
 
-**Quando usar:** se precisar garantia absoluta de zero perda (auditoria, compliance).
+5 commits, 1 autor, 0 issues, `ingest()` é no-op, depende de QMD externo. README parecia bom, código contou outra história. Análise profunda em `ANALISE-PROFUNDA-LUCID.md`.
+
+### Mem0 (`runfali/dsh-mem0-plugins`)
+
+~100⭐, baixa adoção, sem release estável. Foi o plano original mas auditoria empírica (curadoria multi-sinal) mostrou que OpenViking é estritamente superior em todos os critérios.
 
 ---
 
 ## 📌 Decisão arquitetural pro agente-universo
 
-Adotar o **slot `contextEngine` do OpenClaw** como contrato padrão:
+Adotar o **slot `contextEngine` do OpenClaw** com plugin oficial OpenViking:
 
-1. **Core do agente-universo** implementa os 4 hooks:
-   - `ingest()` — entrada de msg nova
-   - `assemble()` — escolhe quais msgs mandar (delega pro plugin)
-   - `compact()` — fallback se plugin não tiver
-   - `after_turn()` — salva estado
+1. **Core do agente-universo** implementa os 4 hooks do slot (herdados do OpenClaw)
+2. **Engine** = `@openviking/openclaw-plugin` (oficial, mantido pelo time OpenViking)
+3. **System prompt** fica intocado — sempre MEMORY + USER + tools + skills
+4. **OpenViking server** roda self-hosted na VPS (Python ≥3.10, porta 1933)
 
-2. **Engine padrão** = compaction do Hermes (threshold 0.5, target_ratio 0.2, protect_last_n 20, protect_first_n 3)
+---
 
-3. **Plugin oficial** = LUCID Context Engine (busca semântica + saliência)
+## 📊 Comparativo final (auditoria empírica via `gh api`)
 
-4. **System prompt** fica intocado — sempre MEMORY + USER + tools + skills
+| Critério | LUCID | Mem0 plugin | OpenViking |
+|---|---|---|---|
+| Stars | 5 | ~100 | **34.688** |
+| Commits últimos 90d | 5 total | irregular | **push diário** |
+| Autores | 1 | 1-2 | **30 contributors** |
+| Releases | 0 | variável | **30 releases, latest HOJE** |
+| CI workflows | 0 | variável | **26 workflows** |
+| Topic DSH oficial | ❌ | ❌ | ✅ `dsh-plugin` |
+| Plugin DSH oficial | ❌ | ⚠️ clone manual | ✅ `clawhub install` |
+| Persiste cross-session | ❌ (`ingest()` no-op) | ✅ | ✅ |
+| Testes | 0 | parcial | ✅ |
 
 ---
 
@@ -101,20 +87,19 @@ Adotar o **slot `contextEngine` do OpenClaw** como contrato padrão:
 
 | # | Fonte | URL |
 |---|---|---|
-| 1 | OpenClaw ContextEngine docs | https://docs.openclaw.ai/concepts/context-engine |
-| 2 | OpenClaw Plugins docs | https://docs.openclaw.ai/tools/plugin |
-| 3 | LUCID Context Engine README | https://github.com/Spaztazim/lucid-context-engine |
-| 4 | lossless-claw README | https://github.com/Martian-Engineering/lossless-claw |
-| 5 | LCM paper (Voltropy) | https://papers.voltropy.com/LCM |
-| 6 | OpenClaw Plugin Architecture | https://docs.openclaw.ai/plugins/architecture-internals |
+| 1 | OpenViking repo | https://github.com/volcengine/OpenViking |
+| 2 | OpenViking plugin DSH | https://github.com/volcengine/OpenViking/tree/main/examples/dsh-memory-plugin |
+| 3 | OpenClaw ContextEngine docs | https://docs.openclaw.ai/concepts/context-engine |
+| 4 | OpenClaw OpenViking plugin | https://github.com/volcengine/OpenViking/tree/main/examples/openclaw-plugin |
+| 5 | npm `@openviking/openclaw-plugin` | https://registry.npmjs.org/@openviking/openclaw-plugin |
+| 6 | Análise profunda LUCID (rejeitado) | `docs/ANALISE-PROFUNDA-LUCID.md` |
+| 7 | Pesquisa inicial | `docs/PESQUISA-CONTEXT-ENGINE-PLUGIN.md` (versão anterior) |
 
 ---
 
 ## 📋 Próximos passos
 
-1. [ ] Patchear `PLANO-FINAL-v2-CORRIGIDO.md` substituindo Fase 4 (Mem0 ⭐1) por:
-   - Slot `contextEngine` plugável (4 hooks)
-   - Engine padrão = compaction Hermes
-   - Plugin LUCID como opção de relevance filter
-2. [ ] Atualizar README com arquitetura de memória
-3. [ ] Commit + push
+1. [x] Patchear `PLANO-FINAL-v2-CORRIGIDO.md` substituindo Fase 4 (Mem0 ⭐1) por OpenViking
+2. [x] Atualizar README com arquitetura de memória
+3. [x] Commit + push
+4. [ ] Fase 4 instalação real (quando aprovado)

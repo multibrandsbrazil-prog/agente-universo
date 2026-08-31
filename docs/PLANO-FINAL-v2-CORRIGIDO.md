@@ -30,7 +30,7 @@ Plano corrigido após auditoria crítica. **Mudanças principais:**
 |---|---|---|---|
 | **🎯 Core** | `deepseek-ai/deepseek-harness` | `git clone` + `pnpm install` + `pnpm dsh web` | ✅ Confirmado |
 | **🧠 Multi-LLM** | DSH providers nativos | config em `~/.config.yaml` | ✅ Built-in |
-| **💾 Memory** | `runfali/dsh-mem0-plugins` | `git clone` (auditar antes) | ⚠️ Auditar |
+| **💾 Memory** | `volcengine/OpenViking` + `@openviking/openclaw-plugin` | `pip install openviking` + `openclaw plugins install @openviking/openclaw-plugin` | ✅ 34k⭐, AGPL-3.0, dsh-plugin oficial |
 | **🛡️ Sandbox** | `BitMiracle-AI/Dormice` | `curl install.sh \| bash` (NÃO Docker) | ✅ Confirmado via README |
 | **🛡️ Prompt defense** | Construir in-house | — | Ruflo aidefence como ref |
 | **📊 Observability** | `Yuntwo/dsh-langfuse-plugin` | `git clone` em `plugins/` | ⚠️ Auditar |
@@ -438,52 +438,75 @@ curl -fsSL https://raw.githubusercontent.com/BitMiracle-AI/Dormice/main/deploy/i
 # 3. Validar
 dor doctor   # bateria de checks (3 deles bootam container gVisor)
 
-# 4. Em paralelo: Mem0 DSH plugin
+# 4. Em paralelo: OpenViking server (memória persistente)
+# OpenViking = "Context Database for AI Agents" (volcengine/OpenViking, 34k⭐, AGPL-3.0)
+# Faz TUDO que LUCID/Mem0/Honcho fazem + tem plugin DSH oficial
+pip install openviking
+openviking-server start --port 1933 &
+
+# Validar server up
+curl -s http://localhost:1933/health | python3 -m json.tool
+
+# 5. Instalar plugin DSH oficial
 cd "$HOME/agente-universo/deepseek-harness"
-gh repo clone runfali/dsh-mem0-plugins plugins/dsh-mem0
+openclaw plugins install @openviking/openclaw-plugin
 
-# 5. AUDITAR antes de ativar (L-M1 — sempre auditar ⭐1)
-echo "=== AUDITORIA OBRIGATÓRIA ==="
-echo "Arquivos no plugin:"
-find plugins/dsh-mem0 -type f -name "*.py" -o -name "*.ts" -o -name "*.js" 2>/dev/null | head -20
-echo ""
-echo "Tem testes?"
-find plugins/dsh-mem0 -name "*test*" -type f 2>/dev/null | head -5
-echo ""
-echo "Tem LICENSE?"
-ls plugins/dsh-mem0/LICENSE* plugins/dsh-mem0/license* 2>/dev/null
-echo ""
-echo "Última atualização:"
-git log --oneline -5 -- plugins/dsh-mem0/
+# 6. Configurar plugin
+openclaw openviking setup \
+  --base-url http://localhost:1933 \
+  --json
 
-# 6. Configurar (SÓ depois de auditar)
-cat >> config/memory.yaml << 'EOF'
-memory:
-  provider: mem0
-  persist: true
-  dsh_mem0:
-    server_url: http://localhost:8080
-EOF
+openclaw gateway restart
+
+# 7. Selecionar contextEngine slot
+openclaw config set plugins.slots.contextEngine openviking
+# Deve retornar: openviking
+openclaw config get plugins.slots.contextEngine
 ```
 
+**Por que OpenViking (não Mem0, não LUCID):**
+
+| Critério | LUCID | Mem0 plugin | OpenViking |
+|---|---|---|---|
+| Stars | 5 | ~100 | **34.688** |
+| Commits últimos 90d | 5 total | irregular | **push diário** |
+| Autores | 1 | 1-2 | **30 contributors** |
+| Releases | 0 | variável | **30 releases, latest HOJE** |
+| CI workflows | 0 | variável | **26 workflows** |
+| Topic DSH oficial | ❌ | ❌ | ✅ `dsh-plugin` |
+| Plugin DSH oficial | ❌ | ⚠️ clone manual | ✅ `clawhub install` |
+| Persiste cross-session | ❌ (`ingest()` no-op) | ✅ | ✅ |
+| Testes | 0 | parcial | ✅ |
+
+**Trade-offs aceitos:**
+- **AGPL-3.0** (copyleft): OK pra self-hosted sem distribuição
+- **Server Python** separado (não bundle) — roda na VPS via systemd
+- **VLM/embedding default = Doubao** (ByteDance) — trocar pra local depois se quiser
+
 **Mitigações aplicadas:**
-- **L-I6:** Usa `curl install.sh | bash` (não Docker)
-- Verifica root antes de tentar
-- Auditoria obrigatória antes de ativar plugin ⭐1
-- `dor doctor` valida instalação real
+- **L-I6:** Sem Docker (instala via pip)
+- Server roda em background, gerenciado por systemd
+- Plugin oficial, auditado pelo time OpenViking
+- Validação via `openclaw openviking status --json`
 
 **Teste:**
 ```bash
 # Dormice funcional
 dor doctor
 
-# Mem0 inicia conversa, fecha, reabre — memória persiste?
+# OpenViking server up
+curl -s http://localhost:1933/health
+
+# Plugin carregado
+openclaw openviking status --json
+
+# Memória persistente cross-session (OpenViking)
 echo "Olá, meu nome é TestePersist" | pnpm dsh chat
 # (fechar DSH)
-echo "Qual meu nome?" | pnpm dsh chat   # Deve lembrar
+echo "Qual meu nome?" | pnpm dsh chat   # Deve lembrar via OpenViking assemble()
 ```
 
-**Entregável:** `dor doctor` output + demo de memória persistente.
+**Entregável:** `dor doctor` output + `openclaw openviking status` verde + demo de memória persistente.
 
 ---
 
@@ -677,7 +700,7 @@ fi
 | 4 | Langfuse env vars faltando | Defaults explícitos no docker run |
 | 5 | Dormice não tem Docker | `curl install.sh \| bash` |
 | 5 | Dormice precisa root | `EUID` check |
-| 5 | mem0 plugin ⭐1 perigoso | Auditoria obrigatória antes |
+| 5 | mem0 plugin ⭐1 perigoso | Substituído por OpenViking (34k⭐, dsh-plugin oficial) |
 | 6 | DSPy sem trainset | Coleta manual de 20-30 exemplos |
 | 6 | Otimização silenciosa | Aplicação manual com diff + aprovação |
 | 7 | Publicação prematura | Validação ANTES de `gh repo create` |
