@@ -1,0 +1,77 @@
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Editor
+.vscode/
+.idea/
+*.iml
+
+# Node / pnpm
+node_modules/
+.pnpm-store/
+dist/
+build/
+*.tsbuildinfo
+.next/
+.turbo/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# DSH (DeepSeek Harness) — quando começar Fase 1
+deepseek-harness/
+deepseek-harness-*/
+packages/*/*/lib/
+packages/*/*/dist/
+
+# Sandbox (Dormice) — quando começar Fase 5
+.dormice/
+
+# Logs
+*.log
+logs/
+
+# Env vars / secrets (NUNCA commitar)
+.env
+.env.*
+*.key
+*.pem
+secrets.yaml
+RENAN_SECRETS
+
+# Backups
+*.bak
+*~
+backups-*/
+
+# Caches de tooling
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Temporary files
+tmp/
+*.tmp
+
+# Test artifacts
+coverage/
+.nyc_output/
+junit.xml
+
+# Dados sensíveis do projeto (decidir antes de git init)
+benchmark-results.txt
+dspy-output.json
+memory.yaml
+config/memory.yaml
+config/observability.yaml
+config/mcp.yaml
