@@ -2,8 +2,8 @@
 
 > **Data:** 2026-08-31
 > **Status:** Planejamento completo. Zero instalação executada.
-> **Fonte:** Consolidação de todos os 11 documentos do projeto (`README.md`, `PROMPT-HANDOFF.md`, 9 arquivos em `docs/`).
-> **Tamanho total:** ~192KB / ~3.500 linhas.
+> **Fonte:** Consolidação de todos os 12 documentos do projeto (`README.md`, `PROMPT-HANDOFF.md`, 9 arquivos em `docs/`, + Documento 12 anexo).
+> **Tamanho total:** ~204KB / ~4.400 linhas.
 
 ---
 
@@ -22,8 +22,9 @@
 | 9 | LACUNAS-FECHADAS.md | Ruflo + SKILL.md + Integrações | 14KB |
 | 10 | ANALISE-PROFUNDA-LUCID.md | LUCID rejeitado (prova da decisão) | 10KB |
 | 11 | PLANO-FINAL-CONSOLIDADO.md | v1 histórico (substituído por v2) | 21KB |
+| **12** | **ANEXO: Validação Empírica DSH vs Hermes** (gerado 2026-08-31) | **DSH cobre 10/19 camadas 100%, 5 parcial, 4 zero** | **~5KB** |
 
-**Ordem de leitura recomendada:** 1 → 2 → 3 → 4 (executivo + plano + arquitetura de referência), depois 5-11 sob demanda.
+**Ordem de leitura recomendada:** 1 → 2 → 3 → 4 → 12 (executivo + plano + arquitetura de referência + validação empírica), depois 5-11 sob demanda.
 
 ---
 
@@ -73,8 +74,9 @@ agente-universo/
 | 🎯 Core | DeepSeek Harness (`dsh` v0.1.2-alpha.3) | ✅ 206k⭐, MIT |
 | 🧠 Multi-LLM | DSH providers nativos | ✅ Built-in |
 | 💾 Memory | `volcengine/OpenViking` + plugin DSH oficial | ✅ 34.690⭐, AGPL-3.0, plugin DSH mantido pelo próprio time |
-| 🛡️ Sandbox | `BitMiracle-AI/Dormice` | ✅ Self-hosted |
-| 🛡️ Prompt defense | In-house (~200 linhas Python) | Ruflo aidefence como ref |
+| 🛡️ Sandbox (Linux) | DSH `native/landlock-run` | ✅ Built-in no DSH (Linux nativo) |
+| �️ Sandbox (cross-OS) | `BitMiracle-AI/Dormice` | ⚠️ Opcional — só se precisar de macOS/Windows ou requisitos avançados |
+| �️ Prompt defense | In-house (~200 linhas Python) | Ruflo aidefence como ref |
 | 📊 Observability | `Yuntwo/dsh-langfuse-plugin` | ⚠️ Auditar antes |
 | 📊 OTel | `traceloop/openllemetry` | ✅ 7.4k⭐ |
 | 🧬 Self-evolution | DSPy + GEPA | ✅ Stanford + SOTA |
@@ -88,11 +90,11 @@ agente-universo/
 | Fase | Tempo | Status | O que faz |
 |---|---|---|---|
 | 0 | 30min | ⏸️ | Verificar pré-requisitos (node, pnpm, gh) |
-| 1 | 1-2h | ⏸️ | Subir DSH core + validar UI |
+| 1 | 1-2h | ⏸️ | Subir DSH core + validar UI (sandbox landlock-run nativo) |
 | 2 | 3-4h | ⏸️ | Skills Bridge + 42 skills Hermes |
 | 3 | 1-2 dias | ⏸️ | OpenClaw skills via clawhub |
-| 4 | 3-4h | ⏸️ | MCP BR + Langfuse observability |
-| 5 | 4-6h | ⏸️ | Sandbox Dormice + Memory OpenViking (server Python self-hosted porta 1933) |
+| 4 | 3-4h | �️ | MCP BR (DSH `packages/mcp` nativo) + Langfuse observability |
+| 5 | 4-6h | ⏸️ | Memory OpenViking (server Python self-hosted porta 1933) — Dormice opcional |
 | 6 | 2-3 dias | ⏸️ | Self-evolution DSPy+GEPA |
 | 7 | 1 dia | ⏸️ | Benchmark vs Hermes + publicar |
 
@@ -193,11 +195,11 @@ inspirado no Hermes Agent da Nous Research. Diferenciais:
 
 ## O que NÃO foi feito (ainda)
 
-❌ Fase 1: Subir DSH core (git clone + pnpm install + dsh web em :3080)
+❌ Fase 1: Subir DSH core (git clone + pnpm install + dsh web em :3080; sandbox landlock-run nativo)
 ❌ Fase 2: Skills Bridge + importar 42 skills Hermes locais
 ❌ Fase 3: OpenClaw skills via clawhub (50 top)
-❌ Fase 4: MCP BR + Langfuse observability
-❌ Fase 5: Sandbox Dormice + Memory OpenViking (server Python self-hosted porta 1933)
+❌ Fase 4: MCP BR (DSH nativo) + Langfuse observability
+❌ Fase 5: Memory OpenViking (server Python self-hosted porta 1933) — Dormice opcional
 ❌ Fase 6: Self-evolution DSPy+GEPA
 ❌ Fase 7: Benchmark vs Hermes + publicar
 
@@ -300,6 +302,16 @@ Plano corrigido após auditoria crítica. **Mudanças principais:**
 7. ❌ **Dormice instala via script bash** (`curl install.sh | bash`), NÃO Docker
 8. 🔧 **Fase 6 refatorada** — DSPy otimiza **system prompt do DSH**, não markdown arbitrário
 
+### 🆕 Validação Empírica 2026-08-31 (Documento 12)
+
+Após mapear os 44 packages do DSH via `gh api`, identificamos 5 implicações práticas:
+
+1. **Sandbox Linux já é built-in no DSH** — `native/landlock-run` é nativo, então **Fase 5 não precisa de Dormice no Linux**. Dormice fica opcional só pra macOS/Windows ou requisitos avançados (sandbox persistente, idle=$0).
+2. **Credentials já são built-in no DSH** — `packages/credentials` gerencia API keys. Não precisa de plugin 3rd-party.
+3. **Memory precisa de plugin externo** — DSH tem SessionDB SQLite mas **sem memory providers semânticos**. OpenViking continua sendo a escolha certa.
+4. **MCP nativo no DSH** — `packages/mcp` já é nativo. Fase 4 só precisa declarar servers, não plugin.
+5. **DSH cobre ~74% do Hermes** (10/19 100% + 5/19 parcial). As 4 camadas zero (Voice/Desktop, Gateway multi-plataforma, Relay, Curator) estão fora do MVP.
+
 ---
 
 ## 🏛️ Arquitetura de Referência (Hermes)
@@ -348,7 +360,8 @@ Antes de planejar as fases, mapeamos **toda a estrutura do Hermes Agent** (19 pa
 | **🎯 Core** | `deepseek-ai/deepseek-harness` | `git clone` + `pnpm install` + `pnpm dsh web` | ✅ Confirmado |
 | **🧠 Multi-LLM** | DSH providers nativos | config em `~/.config.yaml` | ✅ Built-in |
 | **💾 Memory** | `volcengine/OpenViking` + `@openviking/openclaw-plugin` | `pip install openviking` + `openclaw plugins install @openviking/openclaw-plugin` | ✅ 34k⭐, AGPL-3.0, dsh-plugin oficial |
-| **🛡️ Sandbox** | `BitMiracle-AI/Dormice` | `curl install.sh \| bash` (NÃO Docker) | ✅ Confirmado via README |
+| **�️ Sandbox (Linux)** | DSH `native/landlock-run` | já vem no DSH | ✅ Built-in (Fase 1 já ativa) |
+| **🛡️ Sandbox (cross-OS opcional)** | `BitMiracle-AI/Dormice` | `curl install.sh \| bash` (NÃO Docker) | ⚠️ Opcional — só se precisar macOS/Windows |
 | **🛡️ Prompt defense** | Construir in-house | — | Ruflo aidefence como ref |
 | **📊 Observability** | `Yuntwo/dsh-langfuse-plugin` | `git clone` em `plugins/` | ⚠️ Auditar |
 | **🧬 Self-evolution** | DSPy + GEPA | Otimiza **prompts**, não markdown | 🔧 Caso de uso corrigido |
@@ -735,47 +748,49 @@ pnpm dsh --profile hermes-bridge --dump-config 2>&1 | head -20
 
 ### 🟢 FASE 5 — Sandbox + Memory (1 dia) **CORRIGIDA**
 
-**⚠️ MUDANÇA CRÍTICA:** Dormice **não tem Docker image**. Instala via script bash.
+**🆕 MUDANÇA 2026-08-31 (validação empírica):** DSH já tem sandbox Linux nativo (`native/landlock-run`). Dormice fica **OPCIONAL** — só pra macOS/Windows ou requisitos avançados (sandbox persistente, idle=$0). Esta fase agora foca em **OpenViking (Memory)** como entregável principal.
 
 ```bash
-# === Sandbox Dormice (formato correto) ===
+# === Sandbox Linux (NATIVO no DSH — não precisa instalar nada) ===
+# DSH já vem com `native/landlock-run` (Linux nativo, sem Docker, sem root)
+# Ativado por padrão em todas as execuções de tools
+# Verificar:
+pnpm dsh config get sandbox.provider   # deve retornar "landlock"
+pnpm dsh sandbox test                  # roda um script de teste isolado
 
-cd "$HOME/agente-universo"
-
-# 1. Dormice install — SCRIPT, NÃO Docker (L-I6)
-# ⚠️ Requer Ubuntu/Debian x86_64 + root
+# === Sandbox cross-OS (OPCIONAL — só se precisar) ===
+# ⚠️ Dormice: só instalar se você precisa de sandbox persistente cross-OS
+# OU se o landlock-run não cobrir (ex: precisa de gVisor completo)
+# Requer Ubuntu/Debian x86_64 + root
 if [ "$EUID" -ne 0 ]; then
     echo "⚠️ Dormice precisa de root. Use sudo."
     exit 1
 fi
-
-# 2. Instalar (idempotente — pode re-rodar pra upgrade)
 curl -fsSL https://raw.githubusercontent.com/BitMiracle-AI/Dormice/main/deploy/install.sh | bash
-
-# 3. Validar
 dor doctor   # bateria de checks (3 deles bootam container gVisor)
 
-# 4. Em paralelo: OpenViking server (memória persistente)
+# === Memory: OpenViking (entregável principal) ===
 # OpenViking = "Context Database for AI Agents" (volcengine/OpenViking, 34k⭐, AGPL-3.0)
 # Faz TUDO que LUCID/Mem0/Honcho fazem + tem plugin DSH oficial
+
 pip install openviking
 openviking-server start --port 1933 &
 
 # Validar server up
 curl -s http://localhost:1933/health | python3 -m json.tool
 
-# 5. Instalar plugin DSH oficial
+# Instalar plugin DSH oficial
 cd "$HOME/agente-universo/deepseek-harness"
 openclaw plugins install @openviking/openclaw-plugin
 
-# 6. Configurar plugin
+# Configurar plugin
 openclaw openviking setup \
   --base-url http://localhost:1933 \
   --json
 
 openclaw gateway restart
 
-# 7. Selecionar contextEngine slot
+# Selecionar contextEngine slot
 openclaw config set plugins.slots.contextEngine openviking
 # Deve retornar: openviking
 openclaw config get plugins.slots.contextEngine
@@ -808,7 +823,10 @@ openclaw config get plugins.slots.contextEngine
 
 **Teste:**
 ```bash
-# Dormice funcional
+# Sandbox Linux nativo (DSH built-in)
+pnpm dsh sandbox test                  # deve passar isolado
+
+# (Opcional) Dormice funcional, se instalado
 dor doctor
 
 # OpenViking server up
@@ -823,7 +841,7 @@ echo "Olá, meu nome é TestePersist" | pnpm dsh chat
 echo "Qual meu nome?" | pnpm dsh chat   # Deve lembrar via OpenViking assemble()
 ```
 
-**Entregável:** `dor doctor` output + `openclaw openviking status` verde + demo de memória persistente.
+**Entregável:** `pnpm dsh sandbox test` verde + `openclaw openviking status` verde + demo de memória persistente. (Dormice só se você decidiu instalar na seção opcional.)
 
 ---
 
