@@ -1,5 +1,15 @@
 # AUDITORIA EMPÍRICA — Os repos são código real ou conceitos?
 
+> **⚠️ REGISTRO HISTÓRICO da auditoria do dia 2026-08-31**
+>
+> Este documento é a **foto do momento** da curadoria de 18 repos.
+> Decisões tomadas aqui foram **refinadas depois** — ver plano atual em [`PLANO-FINAL-v2-CORRIGIDO.md`](PLANO-FINAL-v2-CORRIGIDO.md).
+>
+> Mudança mais relevante pós-auditoria:
+> - Memory: `mem0ai/mem0` foi citada como "escolhida" aqui → **substituída por `volcengine/OpenViking`** na v2 do plano (commit `dcd30d7`)
+>
+> ---
+
 > **Data:** 2026-08-31
 > **Método:** Apenas `gh api` + `curl raw.githubusercontent` + `npm registry` — **ZERO clones, ZERO installs**
 > **Total auditado:** 18 repos validados

@@ -1,4 +1,16 @@
-# PLANO FINAL CONSOLIDADO — Agente Universal inspirado no Hermes
+# PLANO FINAL CONSOLIDADO (v1 — HISTÓRICO)
+
+> **⚠️ DOCUMENTO HISTÓRICO — SUBSTITUÍDO por [`PLANO-FINAL-v2-CORRIGIDO.md`](PLANO-FINAL-v2-CORRIGIDO.md)**
+>
+> Esta é a **v1** do plano (commit `c2e3a13` initial). Teve **14 problemas** detectados em auditoria.
+> Foi substituído pela **v2** (`PLANO-FINAL-v2-CORRIGIDO.md`, commit `dcd30d7` + `9f5d98c`).
+>
+> Decisões já superadas pela v2 (mantidas aqui só pra histórico):
+> - Memory: `runfali/dsh-mem0-plugins` ⭐1 → **OpenViking** `volcengine/OpenViking` ⭐34.690 + plugin DSH oficial
+>
+> **Use `PLANO-FINAL-v2-CORRIGIDO.md` como referência atual.**
+>
+> ---
 
 > **Data:** 2026-08-31
 > **Inspiração central:** Hermes Agent (Nous Research, ⭐239k) — nossa referência arquitetural

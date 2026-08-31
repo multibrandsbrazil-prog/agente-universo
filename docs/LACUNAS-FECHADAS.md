@@ -10,7 +10,7 @@
 
 **L3 (Ruflo):** Ruflo existe e é forte (70k⭐, MIT, 35 plugins, 314 MCP tools, 98 agents) — MAS **só roda em cima de Claude Code/Codex**, NÃO substitui DSH. **Nossa ideia de agregar skills de fontes diferentes ainda é válida** — Ruflo faz meta-harness pra Claude Code, nosso seria meta-harness pra DSH.
 
-**L5 (Integrações):** DSH já tem plugins comunitários pra **mem0** (3 plugins, mas só ⭐1 cada) e **Langfuse** (2 plugins, melhor ⭐24). **LiteLLM não tem plugin DSH nativo**, mas pode rodar como proxy separado. **DSH tem suporte MCP nativo** (`packages/mcp/`).
+**L5 (Integrações):** DSH tem plugins comunitários pra Mem0 (`runfali/dsh-mem0-plugins` ⭐1, `kittitys/dsh-mem0-memory` ⭐0, `W117C/dsh-memory` ⭐0 — todos sub-⭐25, auditar antes) e Langfuse (`Yuntwo/dsh-langfuse-plugin` ⭐24). **LiteLLM não tem plugin DSH nativo**, mas pode rodar como proxy separado. **DSH tem suporte MCP nativo** (`packages/mcp/`). **Decisão final (commit dcd30d7):** Memory vai usar **`volcengine/OpenViking` ⭐34.690 + plugin DSH oficial `@openviking/openclaw-plugin`** (mantido pelo próprio time OpenViking) — Mem0 puro fica só como referência de mercado pra estudo.
 
 **L6 (SKILL.md):** Formato **base é compatível** (frontmatter `name` + `description`), MAS **Hermes tem metadata proprietária** (`metadata.hermes.tags/category/requires_toolsets`, `environments`). **Adaptador precisa normalizar** (50 linhas Python, trivial).
 
@@ -89,9 +89,9 @@ Ruflo **NÃO é genérico** — ele assume que você tem Claude Code ou Codex in
 
 ---
 
-## 🔍 L5 — INTEGRAÇÕES REAIS (DSH × LiteLLM × mem0 × Langfuse)
+## 🔍 L5 — INTEGRAÇÕES REAIS (DSH × LiteLLM × OpenViking × Langfuse)
 
-### Mem0 — 3 plugins DSH já existem
+### Mem0 — 3 plugins DSH já existem (⚠️ todos sub-⭐25, descartados em favor de OpenViking)
 
 | Plugin | Stars | Push | Descrição |
 |---|---|---|---|
@@ -99,7 +99,7 @@ Ruflo **NÃO é genérico** — ele assume que você tem Claude Code ou Codex in
 | `kittitys/dsh-mem0-memory` | 0 | recente | "DSH conversation memory → mem0 vector store + CLI + local server, Chinese-ready" |
 | `W117C/dsh-memory` | 0 | recente | "Native cognitive memory — mem0/Zep-class capabilities, Cordis v4 native web panel" |
 
-**Veredito:** ✅ Funciona, mas comunidade pequena (0-1⭐). Vale auditar código antes de prod.
+**Veredito (atualizado 31/08/2026):** ⚠️ **NÃO usar Mem0 como Memory principal do agente-universo.** Comunidade muito pequena (0-1⭐). Em vez disso, adotar **`volcengine/OpenViking` ⭐34.690 + `@openviking/openclaw-plugin`** (decisão commit `dcd30d7`). Mem0 puro (`mem0ai/mem0` ⭐64k Apache-2.0) continua válido como **referência de mercado pra estudo da arquitetura**, mas não vamos plugar.
 
 ### Langfuse — 2 plugins DSH já existem
 

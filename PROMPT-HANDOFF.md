@@ -27,17 +27,18 @@ inspirado no Hermes Agent da Nous Research. Diferenciais:
 
 - **Projeto local:**  ~/projetos/agente-universo/
 - **Repo GitHub:**  https://github.com/multibrandsbrazil-prog/agente-universo (público)
-- **Branch:**       main (2 commits: c2e3a13 inicial + 36aed6f cleanup)
+- **Branch:**       main (8 commits, último dcd30d7 + 9f5d98c)
 - **Plano atual:**  ~/projetos/agente-universo/docs/PLANO-FINAL-v2-CORRIGIDO.md
 
 ## O que já foi feito
 
 ✅ Pesquisa completa do Hermes Agent (capacidades, 20 melhorias possíveis)
-✅ Pesquisa de 30+ repositórios no GitHub (DSH, LiteLLM, mem0, Langfuse, DSPy, GEPA, Ruflo, etc)
+✅ Pesquisa de 30+ repositórios no GitHub (DSH, LiteLLM, OpenViking, Langfuse, DSPy, GEPA, Ruflo, etc)
 ✅ Auditoria empírica de 18 repos (3 farsas detectadas: BridgeWard, e2b fragments, ink-ui stale)
 ✅ Lacunas críticas resolvidas (Ruflo vs nossa ideia, compat SKILL.md, integrações DSH)
 ✅ Plano v1 + auditoria crítica + plano v2 corrigido (25KB, 7 fases, 23 mitigações de compat)
-✅ Repositório git criado + 2 commits + push pro GitHub
+✅ Decisão de Memory: Mem0 → **OpenViking** (34.690⭐, AGPL-3.0, plugin DSH oficial mantido pelo próprio time — commit dcd30d7)
+✅ Repositório git criado + commits + push pro GitHub
 ✅ Auditoria de segurança (sem credenciais vazadas, paths sensíveis substituídos por $HOME)
 ✅ Fase 0 do plano concluída (verificações de ambiente OK)
 
@@ -47,7 +48,7 @@ inspirado no Hermes Agent da Nous Research. Diferenciais:
 ❌ Fase 2: Skills Bridge + importar 42 skills Hermes locais
 ❌ Fase 3: OpenClaw skills via clawhub (50 top)
 ❌ Fase 4: MCP BR + Langfuse observability
-❌ Fase 5: Sandbox Dormice + Memory mem0
+❌ Fase 5: Sandbox Dormice + Memory OpenViking (server Python self-hosted porta 1933)
 ❌ Fase 6: Self-evolution DSPy+GEPA
 ❌ Fase 7: Benchmark vs Hermes + publicar
 

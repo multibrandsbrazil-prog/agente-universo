@@ -1,5 +1,16 @@
 # PESQUISA PROFUNDA — Repositórios pro Agente Novo
 
+> **⚠️ PESQUISA INICIAL — refinada depois**
+>
+> Este documento é a **primeira rodada** de curadoria (30+ repos).
+> Decisões foram **atualizadas** em [`PLANO-FINAL-v2-CORRIGIDO.md`](PLANO-FINAL-v2-CORRIGIDO.md).
+>
+> Mudanças pós-pesquisa:
+> - Memory: a pergunta "mem0 (universal) ou honcho (peer) ou openviking (self-evolving)?" foi respondida → **OpenViking** venceu (commit `dcd30d7`)
+> - LUCID Context Engine chegou a ser cogitado (commit `e42f017`) → **rejeitado por auditoria empírica** (`ANALISE-PROFUNDA-LUCID.md`)
+>
+> ---
+
 > **Data:** 2026-08-31
 > **Metodologia:** `gh search repos` + `gh api repos/<x>` + npm Registry + awesome-lists
 > **Validação:** Cada repo checado por stars / license / pushed_at / archived / open_issues
