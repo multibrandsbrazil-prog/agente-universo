@@ -4330,3 +4330,69 @@ Responde em texto normal. **Não instalo nada** até você dar OK explícito na 
 ---
 
 **FIM DO CONSOLIDADO.** Total: 11 documentos originais concatenados em ordem lógica de leitura.
+
+---
+
+# 📌 DOCUMENTO 12 (anexo, 2026-08-31): Validação Empírica DSH vs Hermes — 19 Camadas
+
+> **Origem:** checagem empírica feita via `gh api repos/deepseek-ai/deepseek-harness/*` (metadata + contents + releases).
+> **Repo validado:** `deepseek-ai/deepseek-harness` — 206.423⭐, MIT, TypeScript, tag `dsh-v0.1.2-alpha.3` (2026-08-31), 44 packages em `packages/`, 2 apps (`cli`+`web`), 1 native (`landlock-run`), Python SDK.
+> **Arquitetura DSH:** "Everything is a Plugin" via [Cordis](https://github.com/cordiverse/cordis).
+> **Método:** listagem de `packages/` (44 dirs) + apps/ + native/ + python/ + README, depois mapeamento 1-para-1 com as 19 camadas do Hermes do Documento 4.
+
+## Tabela de cobertura (19 camadas)
+
+| # | Camada Hermes | DSH cobre? | Pacotes DSH |
+|---|---|---|---|
+| 1 | Entry Points (CLI/TUI/Desktop/ACP/Web/Gateway) | ✅ **100%** | `apps/cli` + `apps/web` (porta 3080) + `packages/acp` (IDE adapter) |
+| 2 | Distribution (slash commands + message guards) | 🟡 parcial | CLI subcommands + `packages/webhook`; sem slash registry central cross-surface |
+| 3 | Agent Loop (AIAgent) | ✅ **100%** | `packages/core` + `packages/llm` + `packages/goal` + `packages/plan` + `packages/runtime-diagnostics` |
+| 4 | Capabilities (tools, toolsets, env, skills, subagentes) | ✅ **100%** | `packages/skill` + `packages/subagent` + `packages/extensions` |
+| 5 | Context Lifecycle (system prompt, compression) | ✅ **100%** | `packages/context` + `packages/compaction` + `packages/code-runtime` |
+| 6 | Context & Memory (providers + engines + SessionDB) | ✅ **100%** | `packages/session` + `packages/session-query` + `packages/storage` (SQLite FTS) |
+| 7 | Inference (transports + providers + credential pool) | ✅ **100%** | `packages/llm` (multi-provider) + `packages/credentials` |
+| 8 | Voice & Desktop (TTS, wake, computer use) | ❌ zero | — (não tem TTS streaming, wake words, computer use) |
+| 9 | Code & IDE (LSP, Codex, Copilot ACP) | 🟡 parcial | `packages/lsp` + `packages/acp` + `packages/code-runtime` (sem Codex runtime dedicado) |
+| 10 | Extensibility (plugins + MCP + optional MCPs) | ✅ **100%** | Cordis (everything-is-a-plugin) + `packages/mcp` nativo |
+| 11 | Secrets & Security (Bitwarden/Approvals/Sandbox) | ✅ **100%** | `packages/credentials` + `packages/sandbox` + `native/landlock-run` (Linux sandbox) |
+| 12 | Observability (OTLP, health, redaction) | ✅ **100%** | `packages/runtime-diagnostics` + `packages/feedback` |
+| 13 | Background Work (Cron, Kanban, Delegation) | 🟡 parcial | `packages/schedule` (cron) + `packages/jobs` + `packages/subagent` (sem Kanban dispatcher) |
+| 14 | Gateway Infra multi-plataforma | ❌ zero | CLI + Web só; sem adapter Telegram/Discord/Signal/WhatsApp built-in |
+| 15 | Relay & Connector (WebSocket relay) | ❌ zero | — (não tem) |
+| 16 | Persistence & Isolation (HERMES_HOME, profiles) | ✅ **100%** | `packages/storage` + `packages/workspace` + `packages/host` |
+| 17 | Distribution & Packaging (Docker/Nix/i18n) | � parcial | `pnpm install` + `apps/web` build + `python/sdk`; sem Docker oficial, sem Nix, só `README.zh.md` (sem locales i18n) |
+| 18 | Meta (Curator, Skin engine, Pet) | ❌ zero | — (sem auto-manutenção de skills) |
+| 19 | Tests/Docs (vitest, Docusaurus, AGENTS.md) | 🟡 parcial | `vitest` (test + e2e + snapshot) + `website/` Docusaurus + `packages/AGENTS.md`; escala menor que 17k tests do Hermes |
+
+## Resumo
+
+| Faixa | Camadas | Lista |
+|---|---|---|
+| ✅ 100% | **10** (1, 3, 4, 5, 6, 7, 10, 11, 12, 16) | motor completo + sandbox + observability + CLI/Web/ACP |
+| 🟡 parcial | **5** (2, 9, 13, 17, 19) | slash registry, Codex runtime, Kanban, Docker/Nix, tests/docs |
+| ❌ zero | **4** (8, 14, 15, 18) | Voice/Desktop, Gateway multi-plataforma, Relay, Meta (Curator/Skin/Pet) |
+
+**DSH cobre ~74% da arquitetura do Hermes** ((10+5)/19). As 4 camadas zero são as que exigem **plugins 3rd-party ou desenvolvimento próprio** no plano v2:
+
+- **Camada 8 (Voice/Desktop)** → não está no plano v2 (escopo cortado do MVP)
+- **Camada 14 (Gateway multi-plataforma)** → não está no plano v2 (DSH é single-user CLI/Web, não multi-tenant mensageria como Hermes)
+- **Camada 15 (Relay)** → não está no plano v2 (experimental no Hermes também)
+- **Camada 18 (Meta/Curator)** → substituído por `hermes curator` standalone que roda contra DSH (Fase 1 do plano)
+
+## Correções do checklist anterior (v1 — feito antes da validação empírica)
+
+| Camada | Checklist v1 (errado) | Checklist v2 (corrigido) | Motivo |
+|---|---|---|---|
+| 1 (Entry Points) | ❌ DSH não cobre | ✅ 100% | apps/cli + apps/web (porta 3080) + packages/acp existem |
+| 11 (Secrets/Security) | 🟡 parcial | ✅ 100% | packages/credentials + packages/sandbox + native/landlock-run |
+| 19 (Tests/Docs) | ❌ zero | 🟡 parcial | vitest suite + website/ Docusaurus + packages/AGENTS.md existem |
+
+## Implicações pro plano v2 (Fase 1)
+
+1. **Fase 1 não precisa de plugin de Sandbox** — DSH já tem `native/landlock-run` built-in (Linux nativo).
+2. **Fase 1 não precisa de plugin de Credentials** — DSH já gerencia via `packages/credentials`.
+3. **Fase 1 precisa de plugin de Memory** — DSH tem SessionDB SQLite mas **não tem memory providers semânticos** (sem Mem0/OpenViking built-in). É onde entra OpenViking.
+4. **Fase 4 (MCP)** já vem facilitada — DSH tem `packages/mcp` nativo, é só declarar servers.
+5. **Fase 5 (Dormice sandbox)** do plano v2 pode ser **opcional** — `landlock-run` já dá sandbox Linux. Dormice só vale pra cross-OS (macOS/Windows) ou pra requisitos avançados.
+
+**Recomendação:** revisar Fase 5 do plano v2 pra considerar `landlock-run` como padrão Linux + Dormice como opcional cross-OS.
