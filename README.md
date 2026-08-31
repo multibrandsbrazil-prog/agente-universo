@@ -31,6 +31,8 @@ agente-universo/
 
 **Arquivo executivo:** [`docs/PLANO-FINAL-v2-CORRIGIDO.md`](docs/PLANO-FINAL-v2-CORRIGIDO.md) — leia este pra entender o que vai ser feito.
 
+**Arquitetura de referência (Hermes, 19 partes):** [`docs/ARQUITETURA-HERMES.md`](docs/ARQUITETURA-HERMES.md) — inventário exaustivo da arquitetura real do Hermes Agent (não README de marketing — código real), pra usar como base de comparação durante a implementação.
+
 ---
 
 ## 🎯 Stack final (validado empiricamente)

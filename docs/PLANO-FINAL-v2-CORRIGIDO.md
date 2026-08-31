@@ -24,6 +24,45 @@ Plano corrigido após auditoria crítica. **Mudanças principais:**
 
 ---
 
+## 🏛️ Arquitetura de Referência (Hermes)
+
+Antes de planejar as fases, mapeamos **toda a estrutura do Hermes Agent** (19 partes, 55KB) num documento separado. Ele serve como **referência arquitetural** pra responder perguntas tipo:
+
+- "O Hermes tem X? Como funciona?"
+- "Nosso core DSH suporta Y? Vai precisar adaptar?"
+- "Onde encaixa nossa decisão de OpenViking na arquitetura?"
+- "Quais subsistemas do Hermes a gente NÃO vai copiar (pra manter escopo)?"
+
+📄 **Documento:** [`docs/ARQUITETURA-HERMES.md`](ARQUITETURA-HERMES.md)
+
+**TL;DR da arquitetura Hermes (19 partes):**
+
+| # | Parte | O que tem |
+|---|---|---|
+| 1 | Entry Points | CLI, TUI, Desktop, ACP, Web, Gateway |
+| 2 | Distribution | Slash command registry, 2 message guards, delivery |
+| 3 | Agent Loop | AIAgent class (~12k LOC), loop síncrono, conversation_loop extraído |
+| 4 | Capabilities | Tool registry, 31 toolsets, 6 environments, skills, delegation, managed tool gateway |
+| 5 | Context Lifecycle | Compressor, micro-compaction, breakdown, references, turn finalizer |
+| 6 | Context & Memory | Memory ABC (8 providers), Context engines, SessionDB FTS5, FTS5 CJK native |
+| 7 | Inference | 9 transports (chat_completions/anthropic/codex/bedrock/...), credential pool, billing |
+| 8 | Voice & Desktop | TTS streaming, wake words (ONNX/TFLite), computer use, pet/mascot |
+| 9 | Code & IDE | LSP completo, Codex runtime, Copilot ACP, checkpoints |
+| 10 | Extensibility | Plugin ABCs, MCP, 6 optional MCPs (blender/figma/n8n/...) com manifest.yaml |
+| 11 | Secrets & Security | Bitwarden/1Password/command ABC, approvals, authz |
+| 12 | Observability & Monitoring | OTLP exporter, gateway/cron health, redaction |
+| 13 | Background Work | Cron + Kanban dispatcher + Delegation + Terminal bg |
+| 14 | Gateway Infrastructure | Session lifecycle, turn_lease, wake, scale-to-zero, 15+ platform adapters |
+| 15 | Relay & Connector | WS transport, auth, media plane (experimental) |
+| 16 | Persistence & Isolation | HERMES_HOME, profiles, config vs .env, import/export/sync |
+| 17 | Distribution & Packaging | Docker/s6-overlay, Nix, 18 locales, bootstrap installer |
+| 18 | Meta | Curator, skin engine, pet, achievements, footprint ladder, hermes-doctor |
+| 19 | Tests, Docs & Docs-Site | 17k tests, Docusaurus i18n zh-Hans, AGENTS.md, SOUL.md |
+
+**Métricas:** 134 arquivos em `agent/`, 111 em `tools/`, 54 em `gateway/`, 43+ CLI subcommands, 18 plugins, 8 memory providers, 6 optional MCPs, 6 environments, 18 locales, ~17.000 tests.
+
+---
+
 ## 🎯 STACK FINAL (validado + comandos reais)
 
 | Camada | Repo | Comando real | Validação |
